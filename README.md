@@ -1,6 +1,6 @@
 # ✋ Camera Tracking + Puzzle — Gesture-Controlled Magic
 
-> **Bukan sekadar kamera. Ini tanganmu yang berbicara.**
+> **track tangan sesukamu**
 
 Aplikasi interaktif berbasis Python yang menggabungkan **pelacakan tangan real-time** (MediaPipe), **blur dinamis berbasis gestur**, dan **mode puzzle gesekan dua tangan** — semua dalam satu layar.
 
