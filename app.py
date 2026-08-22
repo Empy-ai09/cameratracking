@@ -26,7 +26,6 @@ from hand_tracker import HandTracker
 from blur_manager import BlurManager
 from puzzle_manager import PuzzleManager
 from ui_manager import UIManager
-from two_hand_panel import TwoHandPanelManager
 from halftone_panel import HalftonePanelManager
 
 
@@ -45,7 +44,6 @@ class MainApp:
         self.tracker = HandTracker()
         self.blur = BlurManager()
         self.puzzle = PuzzleManager(grid_size=3)
-        self.panel = TwoHandPanelManager()
         self.halftone = HalftonePanelManager()
         self.ui = UIManager()
 
@@ -59,7 +57,6 @@ class MainApp:
             return
         self.mode = PUZZLE
         self.blur.suspend()
-        self.panel.suspend()
         self.halftone.suspend()
         self.puzzle.start_setup()
 
@@ -69,7 +66,6 @@ class MainApp:
         self.mode = CAMERA
         self.puzzle.exit()
         self.blur.resume()
-        self.panel.resume()
         self.halftone.resume()
 
     def run(self):
@@ -87,19 +83,16 @@ class MainApp:
             hand = self.tracker.process(frame)
             # update blur alpha tiap frame (decay otomatis saat suspended)
             self.blur.update(hand)
-            # update state gesture dua tangan (panel hatching)
-            self.panel.update(hand)
             self.halftone.update(hand)
 
             out = frame
 
             if self.mode == CAMERA:
                 out = self.blur.apply(out, hand)
-                out = self.panel.draw(out)
                 out = self.halftone.draw(out)
                 self.ui.draw_landmarks(out, hand)
                 self.ui.draw_camera_hud(out, hand, self.blur.alpha, self._fps(),
-                                        panel_state=self.panel.state)
+                                        panel_state=self.halftone.state)
                 if self._enter_cooldown > 0:
                     self._enter_cooldown -= 1
             else:

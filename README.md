@@ -67,7 +67,6 @@ MainApp
 ├── HandTracker      → Deteksi landmark tangan (MediaPipe)
 ├── BlurManager      → Blur dinamis berbasis gestur
 ├── PuzzleManager    → Logika puzzle 3x3 + deteksi solusi
-├── TwoHandPanel     → Panel gestur dua tangan (membuat persegi / panel dari dua tangan)
 ├── HalftonePanel    → Panel halftone presisi ke jari (perspektif + dot-pattern)
 └── UIManager        → Rendering HUD & landmark
 ```
@@ -83,24 +82,12 @@ MainApp
 ├── hand_tracker.py     # MediaPipe Hand Landmarker
 ├── blur_manager.py     # Efek blur adaptif
 ├── puzzle_manager.py   # Puzzle 3x3 + timer + solusi
-├── two_hand_panel.py   # Manajemen dua tangan
 ├── halftone_panel.py  # Panel halftone perspektif dari 4 landmark tangan
 ├── ui_manager.py       # Antarmuka visual
 ├── requirements.txt    # Dependensi Python
 ├── run.sh              # Script jalankan cepat
 └── hand_landmarker.task # Model ML MediaPipe
 ```
-
----
-
-
-## 🖐️ Modul `two_hand_panel.py`
-
-Modul ini bisa **membuat persegi / panel dari posisi dua tangan**. Mekanismenya:
-- **State machine**: `IDLE` → (`tangan bersentuhan`) → `ARMED` → (`tangan direntangkan`) → `OPEN` (panel tampil).
-- Panel berbentuk persegi dengan sudut membulat, diisi **hatch / garis diagonal hitam-putih**.
-- Transisi halus dengan `fade` dan `smooth` agar tampilan tidak berkedip.
-- Murni OpenCV + NumPy, tanpa X11.
 
 ---
 
