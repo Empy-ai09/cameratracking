@@ -67,7 +67,7 @@ MainApp
 ├── HandTracker      → Deteksi landmark tangan (MediaPipe)
 ├── BlurManager      → Blur dinamis berbasis gestur
 ├── PuzzleManager    → Logika puzzle 3x3 + deteksi solusi
-├── TwoHandPanel     → Panel gestur dua tangan
+├── TwoHandPanel     → Panel gestur dua tangan (membuat persegi / panel dari dua tangan)
 └── UIManager        → Rendering HUD & landmark
 ```
 
@@ -91,12 +91,14 @@ MainApp
 
 ---
 
-## 💡 Ide Selanjutnya
 
-- [ ] Mode multiplayer lokal (2 webcam)
-- [ ] Puzzle ukuran dinamis (4x4, 5x5)
-- [ ] Rekaman video otomatis saat solusi tercapai
-- [ ] Integrasi suara (SFX saat potongan cocok)
+## 🖐️ Modul `two_hand_panel.py`
+
+Modul ini bisa **membuat persegi / panel dari posisi dua tangan**. Mekanismenya:
+- **State machine**: `IDLE` → (`tangan bersentuhan`) → `ARMED` → (`tangan direntangkan`) → `OPEN` (panel tampil).
+- Panel berbentuk persegi dengan sudut membulat, diisi **hatch / garis diagonal hitam-putih**.
+- Transisi halus dengan `fade` dan `smooth` agar tampilan tidak berkedip.
+- Murni OpenCV + NumPy, tanpa X11.
 
 ---
 
@@ -106,4 +108,4 @@ Dibuat untuk eksplorasi interaksi manusia-komputer. Bebas digunakan, dimodifikas
 
 ---
 
-> **"Tanganmu bukan hanya alat — ini remote control masa depan."** 👋
+
