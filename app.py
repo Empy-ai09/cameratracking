@@ -27,6 +27,7 @@ from blur_manager import BlurManager
 from puzzle_manager import PuzzleManager
 from ui_manager import UIManager
 from two_hand_panel import TwoHandPanelManager
+from halftone_panel import HalftonePanelManager
 
 
 CAMERA = "camera"
@@ -45,6 +46,7 @@ class MainApp:
         self.blur = BlurManager()
         self.puzzle = PuzzleManager(grid_size=3)
         self.panel = TwoHandPanelManager()
+        self.halftone = HalftonePanelManager()
         self.ui = UIManager()
 
         self.mode = CAMERA
@@ -58,6 +60,7 @@ class MainApp:
         self.mode = PUZZLE
         self.blur.suspend()
         self.panel.suspend()
+        self.halftone.suspend()
         self.puzzle.start_setup()
 
     def _to_camera(self):
@@ -67,6 +70,7 @@ class MainApp:
         self.puzzle.exit()
         self.blur.resume()
         self.panel.resume()
+        self.halftone.resume()
 
     def run(self):
         print("=== Integrated Hand Tracking + Puzzle ===")
@@ -85,12 +89,14 @@ class MainApp:
             self.blur.update(hand)
             # update state gesture dua tangan (panel hatching)
             self.panel.update(hand)
+            self.halftone.update(hand)
 
             out = frame
 
             if self.mode == CAMERA:
                 out = self.blur.apply(out, hand)
                 out = self.panel.draw(out)
+                out = self.halftone.draw(out)
                 self.ui.draw_landmarks(out, hand)
                 self.ui.draw_camera_hud(out, hand, self.blur.alpha, self._fps(),
                                         panel_state=self.panel.state)

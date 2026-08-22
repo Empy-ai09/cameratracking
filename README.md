@@ -68,6 +68,7 @@ MainApp
 ├── BlurManager      → Blur dinamis berbasis gestur
 ├── PuzzleManager    → Logika puzzle 3x3 + deteksi solusi
 ├── TwoHandPanel     → Panel gestur dua tangan (membuat persegi / panel dari dua tangan)
+├── HalftonePanel    → Panel halftone presisi ke jari (perspektif + dot-pattern)
 └── UIManager        → Rendering HUD & landmark
 ```
 
@@ -83,6 +84,7 @@ MainApp
 ├── blur_manager.py     # Efek blur adaptif
 ├── puzzle_manager.py   # Puzzle 3x3 + timer + solusi
 ├── two_hand_panel.py   # Manajemen dua tangan
+├── halftone_panel.py  # Panel halftone perspektif dari 4 landmark tangan
 ├── ui_manager.py       # Antarmuka visual
 ├── requirements.txt    # Dependensi Python
 ├── run.sh              # Script jalankan cepat
@@ -99,6 +101,17 @@ Modul ini bisa **membuat persegi / panel dari posisi dua tangan**. Mekanismenya:
 - Panel berbentuk persegi dengan sudut membulat, diisi **hatch / garis diagonal hitam-putih**.
 - Transisi halus dengan `fade` dan `smooth` agar tampilan tidak berkedip.
 - Murni OpenCV + NumPy, tanpa X11.
+
+---
+
+## 🖼️ Modul `halftone_panel.py`
+
+Modul baru untuk **panel halftone yang menempel presisi ke jari** menggunakan 4 titik landmark (`INDEX_FINGER_TIP` 8 & `THUMB_TIP` 4) dari dua tangan pertama:
+- **4 titik sudut** diambil langsung dari `HandData.hands_px`, bukan bounding box.
+- **Warp perspektif** (`getPerspectiveTransform` + `warpPerspective`) membuat panel miring sesuai sudut tangan asli.
+- **Efek halftone**: grayscale → CLAHE/equalizeHist → grid dot (radius proporsional kegelapan) dengan background putih solid; area paling gelap mendapat tint biru gelap.
+- **EMA smoothing** pada quad + state machine `IDLE → ARMED → OPEN` + fallback `last-good-hold` saat landmark hilang.
+- Terintegrasi di `app.py` sebagai layer tambahan di Camera Mode.
 
 ---
 
