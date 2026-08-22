@@ -32,7 +32,7 @@ class HalftonePanelManager:
 
     def __init__(
         self,
-        source_path: str = "source_photo.png",
+        video_path: str = "glich.mp4",
         smooth: float = 0.35,
         fade_speed: float = 0.18,
         cell_size: int = 9,
@@ -55,28 +55,11 @@ class HalftonePanelManager:
         self._quad_smooth: Optional[List[Tuple[float, float]]] = None
         self._last_good_quad: Optional[List[Tuple[float, float]]] = None
 
-        # load atau buat source image
-        src = cv2.imread(source_path)
-        if src is not None:
-            self.source_img = src
-        else:
-            # fallback synthetic
-            h, w = 300, 400
-            img = np.ones((h, w, 3), dtype=np.uint8) * 230
-            self.source_img = img
-
-        # precompute grayscale contrast-enhanced version untuk efek (update saat draw?)
-        # Kita akan proses saat draw untuk memastikan fresh; tapi bisa precompute grayscale
-        self._gray_enhanced = None
-        self._prepare_source()
-
-    def _prepare_source(self):
-        gray = cv2.cvtColor(self.source_img, cv2.COLOR_BGR2GRAY)
-        # equalizeHist lalu CLAHE
-        eq = cv2.equalizeHist(gray)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        enhanced = clahe.apply(eq)
-        self._gray_base = enhanced  # grayscale yang sudah kontras
+        # Buka video glich sebagai sumber animasi loop
+        self.cap_vid = cv2.VideoCapture(video_path)
+        if not self.cap_vid.isOpened():
+            raise RuntimeError(f"Tidak bisa membuka video: {video_path}")
+        self._frame_idx = 0
 
     def suspend(self):
         self._suspended = True
@@ -244,8 +227,23 @@ class HalftonePanelManager:
             (max(0, min(x, w - 1)), max(0, min(y, h - 1))) for x, y in quad_pts
         ]
 
-        # Membuat gambar halftone dari source
-        gray_base = self._gray_base
+        # Baca frame video berikutnya (loop)
+        ret, vid_frame = self.cap_vid.read()
+        if not ret:
+            # Loop kembali ke awal
+            self.cap_vid.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            ret, vid_frame = self.cap_vid.read()
+        if not ret or vid_frame is None:
+            # Fallback jika video gagal dibaca
+            return frame
+
+        # Proses frame video menjadi grayscale kontras tinggi
+        gray_vid = cv2.cvtColor(vid_frame, cv2.COLOR_BGR2GRAY)
+        eq_vid = cv2.equalizeHist(gray_vid)
+        clahe_vid = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        gray_base = clahe_vid.apply(eq_vid)
+
+        # Membuat gambar halftone dari frame video
         halftone_img = self._build_halftone(gray_base)
 
         # Sumber rectangle (ukuran source image)
