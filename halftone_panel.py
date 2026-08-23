@@ -24,10 +24,10 @@ THUMB_ID = 4
 
 
 class HalftonePanelManager:
-    TOUCH_RATIO = 1.4
-    OPEN_RATIO = 3.2
-    TOUCH_FRAMES = 6
-    OPEN_FRAMES = 4
+    THUMB_CLOSE_RATIO = 0.8
+    THUMB_SPREAD_RATIO = 1.5
+    THUMB_CLOSE_FRAMES = 8
+    THUMB_SPREAD_FRAMES = 3
     LOST_FRAMES = 10
 
     def __init__(
@@ -51,8 +51,8 @@ class HalftonePanelManager:
         self.black = black
         self.skip_frames = skip_frames
         self._suspended = False
-        self._touch_count = 0
-        self._open_count = 0
+        self._thumb_close_count = 0
+        self._thumb_spread_count = 0
         self._lost_count = 0
         self._quad_smooth: Optional[List[Tuple[float, float]]] = None
         self._last_good_quad: Optional[List[Tuple[float, float]]] = None
@@ -71,7 +71,7 @@ class HalftonePanelManager:
 
     def reset(self):
         self.state = IDLE
-        self._touch_count = self._open_count = self._lost_count = 0
+        self._thumb_close_count = self._thumb_spread_count = self._lost_count = 0
         self._quad_smooth = None
         self._last_good_quad = None
         self.alpha = 0.0
@@ -129,7 +129,7 @@ class HalftonePanelManager:
     def update(self, hand: HandData):
         if self._suspended:
             self.state = IDLE
-            self._touch_count = self._open_count = 0
+            self._thumb_close_count = self._thumb_spread_count = 0
             self.alpha += (0.0 - self.alpha) * self.fade_speed
             return
 
@@ -149,35 +149,32 @@ class HalftonePanelManager:
             smoothed = self._smooth_quad(raw_quad)
             self._last_good_quad = smoothed
 
-            # Hitung jarak antara tangan (gunakan index tips)
-            # Kita pakai jarak antara titik tengah index dan thumb untuk menentukan touch/open
-            # Atau gunakan jarak antara pusat tangan seperti two_hand_panel
-            # Untuk konsistensi, gunakan jarak antara titik tengah dari 2 index tips
-            p1 = np.array(smoothed[0], dtype=float)  # left index
-            p2 = np.array(smoothed[2], dtype=float)  # right index
+            # Hitung jarak antara kedua jempol (thumb tips)
+            p1 = np.array(smoothed[3], dtype=float)  # left thumb
+            p2 = np.array(smoothed[1], dtype=float)  # right thumb
             # Skala tangan: rata-rata skala dari hand.hands_scale
             scale = 1.0
             if len(hand.hands_scale) >= 2:
                 scale = max(1.0, (hand.hands_scale[0] + hand.hands_scale[1]) / 2.0)
-            dist = math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / scale
+            thumb_dist = math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / scale
 
-            touching = dist < self.TOUCH_RATIO
-            spread = dist > self.OPEN_RATIO
+            thumb_close = thumb_dist < self.THUMB_CLOSE_RATIO
+            thumb_spread = thumb_dist > self.THUMB_SPREAD_RATIO
 
-            self._touch_count = self._touch_count + 1 if touching else 0
-            self._open_count = self._open_count + 1 if spread else 0
+            self._thumb_close_count = self._thumb_close_count + 1 if thumb_close else 0
+            self._thumb_spread_count = self._thumb_spread_count + 1 if thumb_spread else 0
 
             if self.state == IDLE:
-                if self._touch_count >= self.TOUCH_FRAMES:
+                if self._thumb_close_count >= self.THUMB_CLOSE_FRAMES:
                     self.state = ARMED
-                    self._open_count = 0
+                    self._thumb_spread_count = 0
             elif self.state == ARMED:
-                if self._open_count >= self.OPEN_FRAMES:
+                if self._thumb_spread_count >= self.THUMB_SPREAD_FRAMES:
                     self.state = OPEN
             elif self.state == OPEN:
-                if self._touch_count >= self.TOUCH_FRAMES:
+                if self._thumb_close_count >= self.THUMB_CLOSE_FRAMES:
                     self.state = ARMED
-                    self._open_count = 0
+                    self._thumb_spread_count = 0
 
         target_alpha = 1.0 if self.state == OPEN else 0.0
         self.alpha += (target_alpha - self.alpha) * self.fade_speed
