@@ -1,20 +1,18 @@
-# ✋ Camera Tracking + Puzzle
+# ✋ Camera Tracking
 
 > *Tangan kamu jadi remote control.*
 
-Gesture-controlled real-time camera tracking pakai MediaPipe — **blur adaptif**, **puzzle 3×3**, dan **panel halftone perspektif** dari 4 ujung jari. Satu webcam, satu HandTracker, semua mode hidup bareng.
+Gesture-controlled real-time camera tracking pakai MediaPipe — **blur adaptif** dan **panel halftone perspektif** dari 4 ujung jari. Satu webcam, satu HandTracker, satu mode: Camera.
 
 ---
 
-## 🎬 Gestur & Mode
+## 🎬 Gestur
 
 | Mode | Trigger | Aksi |
 |------|---------|------|
 | 📷 Camera | ✌️ + ✌️ dua tangan | Blur area tangan aktif |
-| 📷 Camera | ☝️🤏 2 tangan sentuh → buka | Panel halftone muncul |
-| 🧩 Puzzle | `P` | Masuk puzzle mode |
-| 🧩 Puzzle | 🤏 pinch 2 tangan | Geser tile |
-| 🧩 Puzzle | 🤘 metal | Reset puzzle |
+| 📷 Camera | 🤏🤏 kedua jempol sangat dekat | Panel halftone ARMED |
+| 📷 Camera | kedua jempol direnggangkan | Panel halftone OPEN (langsung aktif) |
 | 🌐 Semua | tangan terdeteksi | overlay landmark + HUD |
 
 ---
@@ -23,10 +21,9 @@ Gesture-controlled real-time camera tracking pakai MediaPipe — **blur adaptif*
 
 | Key | Fungsi |
 |-----|--------|
-| `P` | Camera ↔ Puzzle |
-| `ESC` | Puzzle → Camera |
-| `R` | Reset puzzle |
 | `Q` | Quit |
+
+> Jendela aplikasi bisa di-resize bebas.
 
 ---
 
@@ -47,8 +44,7 @@ Butuh `hand_landmarker.task` di direktori yang sama. Akses webcam diizinkan.
 MainApp
 ├── HandTracker     MediaPipe HandLandmarker + lowlight + smoothing
 ├── BlurManager     Gaussian blur + hull mask + downsample
-├── PuzzleManager   3×3 tiles, drag-drop, solver detection
-├── HalftonePanel   4-titik warp + dot-halftone dari video
+├── HalftonePanel   4-titik warp + dot-halftone dari video, trigger jempol
 └── UIManager       HUD, landmark, FPS, mode badge
 ```
 
@@ -69,12 +65,11 @@ Korban: tepi blur/halftone lebih kasar, deteksi low-light kurang agresif, gestur
 ## 📁 Struktur
 
 ```
-app.py               state machine + main loop
+app.py               main loop + state
 main.py              entry point
 hand_tracker.py      MediaPipe wrapper
 blur_manager.py      adaptive blur
-puzzle_manager.py    3×3 puzzle + solver
-halftone_panel.py    perspective halftone panel
+halftone_panel.py    perspective halftone panel (trigger jempol)
 ui_manager.py        HUD + overlay
 requirements.txt
 hand_landmarker.task
