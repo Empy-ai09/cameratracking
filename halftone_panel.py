@@ -35,10 +35,11 @@ class HalftonePanelManager:
         video_path: str = "glich.mp4",
         smooth: float = 0.35,
         fade_speed: float = 0.18,
-        cell_size: int = 9,
+        cell_size: int = 12,
         max_radius_ratio: float = 0.6,
         dark_blue: Tuple[int, int, int] = (30, 40, 100),
         black: Tuple[int, int, int] = (10, 10, 10),
+        skip_frames: int = 1,
     ):
         self.state = IDLE
         self.alpha = 0.0
@@ -48,6 +49,7 @@ class HalftonePanelManager:
         self.max_radius = max_radius_ratio * cell_size
         self.dark_blue = dark_blue
         self.black = black
+        self.skip_frames = skip_frames
         self._suspended = False
         self._touch_count = 0
         self._open_count = 0
@@ -185,28 +187,34 @@ class HalftonePanelManager:
             pass
 
     def _build_halftone(self, src_gray: np.ndarray) -> np.ndarray:
-        # src_gray: grayscale image (0-255)
         h_img, w_img = src_gray.shape
         cell = self.cell_size
         max_r = self.max_radius
+        # downsampled grid: block-reduce via cv2.resize average
+        gh = h_img // cell
+        gw = w_img // cell
+        if gh == 0 or gw == 0:
+            return np.ones((h_img, w_img, 3), dtype=np.uint8) * 255
+        small = cv2.resize(src_gray, (gw, gh), interpolation=cv2.INTER_AREA)
+        darkness = 1.0 - (small.astype(np.float32) / 255.0)
+        ys, xs = np.indices((gh, gw))
+        cx = (xs * cell + cell // 2).astype(np.int32)
+        cy = (ys * cell + cell // 2).astype(np.int32)
+        r = np.clip((darkness * max_r), 0, max_r).astype(np.int32)
         out = np.ones((h_img, w_img, 3), dtype=np.uint8) * 255
-        # Buat grid
-        for y in range(0, h_img, cell):
-            for x in range(0, w_img, cell):
-                # Ambil area sel
-                y2 = min(y + cell, h_img)
-                x2 = min(x + cell, w_img)
-                region = src_gray[y:y2, x:x2]
-                mean_val = float(region.mean())
-                # Makin gelap (mean rendah) -> radius besar
-                darkness = 1.0 - (mean_val / 255.0)
-                r = max(0, int(darkness * max_r))
-                # Pusat sel
-                cx = x + (x2 - x) // 2
-                cy = y + (y2 - y) // 2
-                if r > 0:
-                    color = self.dark_blue if mean_val < 60 else self.black
-                    cv2.circle(out, (cx, cy), r, color, -1)
+        # color mask: <60 mean -> dark_blue, else black
+        mean_v = small
+        blue_mask = mean_v < 60
+        b_ch = np.where(blue_mask, self.dark_blue[0], self.black[0]).astype(np.uint8)
+        g_ch = np.where(blue_mask, self.dark_blue[1], self.black[1]).astype(np.uint8)
+        r_ch = np.where(blue_mask, self.dark_blue[2], self.black[2]).astype(np.uint8)
+        # paint dots (radius 0 -> skip)
+        for yy in range(gh):
+            for xx in range(gw):
+                radius = int(r[yy, xx])
+                if radius > 0:
+                    cv2.circle(out, (int(cx[yy, xx]), int(cy[yy, xx])), radius,
+                               (int(b_ch[yy, xx]), int(g_ch[yy, xx]), int(r_ch[yy, xx])), -1)
         return out
 
     def draw(self, frame: np.ndarray) -> np.ndarray:

@@ -24,10 +24,9 @@ class UIManager:
         for points in hand.hands_px:
             for s, e in HAND_CONNECTIONS:
                 if s < len(points) and e < len(points):
-                    cv2.line(frame, points[s], points[e], (255, 255, 255), 2, cv2.LINE_AA)
+                    cv2.line(frame, points[s], points[e], (255, 255, 255), 1, cv2.LINE_AA)
             for _id, (cx, cy) in enumerate(points):
-                cv2.circle(frame, (cx, cy), 6, (255, 255, 255), -1, cv2.LINE_AA)
-                cv2.circle(frame, (cx, cy), 6, (0, 0, 0), 2, cv2.LINE_AA)
+                cv2.circle(frame, (cx, cy), 4, (255, 255, 255), -1, cv2.LINE_AA)
 
     def draw_camera_hud(self, frame, hand: HandData, blur_alpha: float, fps: float,
                         panel_state: str = "idle"):

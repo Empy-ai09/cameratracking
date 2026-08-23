@@ -104,9 +104,11 @@ class HandTracker:
         min_pres_conf: float = 0.35,
         smooth_alpha: float = 0.55,
         lost_hold_frames: int = 8,
-        lowlight_thr: float = 95.0,
+        lowlight_thr: float = 75.0,
         clahe_clip: float = 2.5,
         clahe_tile: Tuple[int, int] = (8, 8),
+        detect_width: int = 320,
+        lowlight_interval: int = 6,
     ):
         base_options = python.BaseOptions(model_asset_path=model_path)
         options = vision.HandLandmarkerOptions(
@@ -122,6 +124,11 @@ class HandTracker:
         self.lost_hold_frames = lost_hold_frames
         self.lowlight_thr = lowlight_thr
         self.clahe = cv2.createCLAHE(clipLimit=clahe_clip, tileGridSize=clahe_tile)
+        self.detect_width = detect_width
+        self.lowlight_interval = lowlight_interval
+        self._lowlight_tick = 0
+        self._last_mean_lum = 255.0
+        self._last_lowlight = False
         self._prev_hands: List[List[Tuple[float, float]]] = []
         self._last_good: List[List[Tuple[float, float]]] = []
         self._lost = 0
@@ -132,21 +139,18 @@ class HandTracker:
         return float(np.clip(mean_lum / 128.0, 0.5, 1.0))
 
     def _preprocess(self, frame_bgr):
-        gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
-        mean_lum = float(gray.mean())
-        if mean_lum >= self.lowlight_thr:
-            return frame_bgr, mean_lum, False
+        self._lowlight_tick = (self._lowlight_tick + 1) % self.lowlight_interval
+        if self._lowlight_tick == 0:
+            gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
+            self._last_mean_lum = float(gray.mean())
+            self._last_lowlight = self._last_mean_lum < self.lowlight_thr
+        if not self._last_lowlight:
+            return frame_bgr, self._last_mean_lum, False
         lab = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(lab)
         l = self.clahe.apply(l)
         enhanced = cv2.cvtColor(cv2.merge((l, a, b)), cv2.COLOR_LAB2BGR)
-        gamma = self._auto_gamma(mean_lum)
-        inv = 1.0 / gamma
-        table = np.array([((i / 255.0) ** inv) * 255 for i in range(256)]).astype(np.uint8)
-        enhanced = cv2.LUT(enhanced, table)
-        enhanced = cv2.convertScaleAbs(enhanced, alpha=1.08, beta=8)
-        enhanced = cv2.bilateralFilter(enhanced, d=5, sigmaColor=35, sigmaSpace=35)
-        return enhanced, mean_lum, True
+        return enhanced, self._last_mean_lum, True
 
     def _smooth(self, raw_hands):
         if not raw_hands:
@@ -168,7 +172,14 @@ class HandTracker:
     def process(self, frame_bgr) -> HandData:
         h, w = frame_bgr.shape[:2]
         detect_frame, mean_lum, lowlight = self._preprocess(frame_bgr)
-        rgb = cv2.cvtColor(detect_frame, cv2.COLOR_BGR2RGB)
+        if w > self.detect_width:
+            scale = self.detect_width / w
+            new_w = self.detect_width
+            new_h = int(h * scale)
+            small = cv2.resize(detect_frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
+        else:
+            small = detect_frame
+        rgb = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
         ts_ms = int((time.time() - self._t0) * 1000)
         try:

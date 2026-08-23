@@ -34,10 +34,12 @@ PUZZLE = "puzzle"
 
 
 class MainApp:
-    def __init__(self, cam_index=0, width=1280, height=720):
+    def __init__(self, cam_index=0, width=640, height=480):
         self.cap = cv2.VideoCapture(cam_index)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        self.cap.set(cv2.CAP_PROP_FPS, 30)
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         if not self.cap.isOpened():
             raise RuntimeError("Kamera tidak bisa dibuka")
 
@@ -79,6 +81,7 @@ class MainApp:
             if not ok:
                 break
             frame = cv2.flip(frame, 1)
+            self._t_prev = time.time()
 
             hand = self.tracker.process(frame)
             # update blur alpha tiap frame (decay otomatis saat suspended)
