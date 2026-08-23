@@ -240,15 +240,8 @@ class HalftonePanelManager:
             # Fallback jika video gagal dibaca
             return frame
 
-        lab_vid = cv2.cvtColor(vid_frame, cv2.COLOR_BGR2LAB)
-        l_channel, a_channel, b_channel = cv2.split(lab_vid)
-        clahe_vid = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        l_channel = clahe_vid.apply(l_channel)
-        color_vid = cv2.cvtColor(cv2.merge((l_channel, a_channel, b_channel)), cv2.COLOR_LAB2BGR)
+        halftone_img = vid_frame
 
-        halftone_img = self._build_halftone(color_vid)
-
-        # Sumber rectangle (ukuran source image)
         sh, sw = halftone_img.shape[:2]
         src_pts = np.array([[0, 0], [sw, 0], [sw, sh], [0, sh]], dtype=np.float32)
         dst_pts = np.array(quad_pts, dtype=np.float32)
