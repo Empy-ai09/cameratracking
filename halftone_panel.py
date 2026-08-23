@@ -186,35 +186,30 @@ class HalftonePanelManager:
             # Tidak reset quad, tetap tahan untuk fallback
             pass
 
-    def _build_halftone(self, src_gray: np.ndarray) -> np.ndarray:
-        h_img, w_img = src_gray.shape
+    def _build_halftone(self, src_color: np.ndarray) -> np.ndarray:
+        h_img, w_img = src_color.shape[:2]
         cell = self.cell_size
         max_r = self.max_radius
-        # downsampled grid: block-reduce via cv2.resize average
         gh = h_img // cell
         gw = w_img // cell
         if gh == 0 or gw == 0:
             return np.ones((h_img, w_img, 3), dtype=np.uint8) * 255
-        small = cv2.resize(src_gray, (gw, gh), interpolation=cv2.INTER_AREA)
-        darkness = 1.0 - (small.astype(np.float32) / 255.0)
+
+        small_color = cv2.resize(src_color, (gw, gh), interpolation=cv2.INTER_AREA)
+        small_gray = cv2.cvtColor(small_color, cv2.COLOR_BGR2GRAY)
+        darkness = 1.0 - (small_gray.astype(np.float32) / 255.0)
         ys, xs = np.indices((gh, gw))
         cx = (xs * cell + cell // 2).astype(np.int32)
         cy = (ys * cell + cell // 2).astype(np.int32)
-        r = np.clip((darkness * max_r), 0, max_r).astype(np.int32)
+        radii = np.clip(darkness * max_r, 0, max_r).astype(np.int32)
         out = np.ones((h_img, w_img, 3), dtype=np.uint8) * 255
-        # color mask: <60 mean -> dark_blue, else black
-        mean_v = small
-        blue_mask = mean_v < 60
-        b_ch = np.where(blue_mask, self.dark_blue[0], self.black[0]).astype(np.uint8)
-        g_ch = np.where(blue_mask, self.dark_blue[1], self.black[1]).astype(np.uint8)
-        r_ch = np.where(blue_mask, self.dark_blue[2], self.black[2]).astype(np.uint8)
-        # paint dots (radius 0 -> skip)
+
         for yy in range(gh):
             for xx in range(gw):
-                radius = int(r[yy, xx])
+                radius = int(radii[yy, xx])
                 if radius > 0:
-                    cv2.circle(out, (int(cx[yy, xx]), int(cy[yy, xx])), radius,
-                               (int(b_ch[yy, xx]), int(g_ch[yy, xx]), int(r_ch[yy, xx])), -1)
+                    color = tuple(int(channel) for channel in small_color[yy, xx])
+                    cv2.circle(out, (int(cx[yy, xx]), int(cy[yy, xx])), radius, color, -1)
         return out
 
     def draw(self, frame: np.ndarray) -> np.ndarray:
@@ -245,14 +240,13 @@ class HalftonePanelManager:
             # Fallback jika video gagal dibaca
             return frame
 
-        # Proses frame video menjadi grayscale kontras tinggi
-        gray_vid = cv2.cvtColor(vid_frame, cv2.COLOR_BGR2GRAY)
-        eq_vid = cv2.equalizeHist(gray_vid)
+        lab_vid = cv2.cvtColor(vid_frame, cv2.COLOR_BGR2LAB)
+        l_channel, a_channel, b_channel = cv2.split(lab_vid)
         clahe_vid = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        gray_base = clahe_vid.apply(eq_vid)
+        l_channel = clahe_vid.apply(l_channel)
+        color_vid = cv2.cvtColor(cv2.merge((l_channel, a_channel, b_channel)), cv2.COLOR_LAB2BGR)
 
-        # Membuat gambar halftone dari frame video
-        halftone_img = self._build_halftone(gray_base)
+        halftone_img = self._build_halftone(color_vid)
 
         # Sumber rectangle (ukuran source image)
         sh, sw = halftone_img.shape[:2]
