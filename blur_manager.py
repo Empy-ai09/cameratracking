@@ -34,7 +34,7 @@ class BlurManager:
         return self.enabled and not self._suspended
 
     def update(self, hand: HandData):
-        target = 1.0 if (self.active and hand.peace) else 0.0
+        target = 1.0 if (self.active and hand.two_hand_peace) else 0.0
         self.alpha += (target - self.alpha) * self.transition_speed
         self.alpha = max(0.0, min(1.0, self.alpha))
 

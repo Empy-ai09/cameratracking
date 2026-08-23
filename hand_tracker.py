@@ -45,6 +45,8 @@ class HandData:
     hands_center: List[Tuple[int, int]]         = field(default_factory=list)
     hands_scale:  List[float]                   = field(default_factory=list)
     peace:      bool = False
+    peace_count: int = 0
+    two_hand_peace: bool = False
     metal:      bool = False
     lowlight:   bool = False
     mean_lum:   float = 0.0
@@ -223,9 +225,11 @@ class HandTracker:
                 data.hands_scale.append(1.0)
             objs = [_P(x, y) for (x, y) in hand_xy]
             if is_peace_sign(objs):
-                data.peace = True
+                data.peace_count += 1
             if is_metal_gesture(objs):
                 data.metal = True
+        data.peace = data.peace_count > 0
+        data.two_hand_peace = data.peace_count >= 2 and len(smoothed) >= 2
         return data
 
     def close(self):

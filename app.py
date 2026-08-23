@@ -72,7 +72,7 @@ class MainApp:
 
     def run(self):
         print("=== Integrated Hand Tracking + Puzzle ===")
-        print("Camera Mode : peace sign -> blur ON  |  'p' -> Puzzle Mode")
+        print("Camera Mode : 2 peace signs -> blur ON  |  'p' -> Puzzle Mode")
         print("Puzzle Mode : 2 hands + pinch to snap | metal -> reset | ESC -> Camera")
         print("'q' to quit\n")
 

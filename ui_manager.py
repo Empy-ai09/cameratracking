@@ -31,8 +31,8 @@ class UIManager:
     def draw_camera_hud(self, frame, hand: HandData, blur_alpha: float, fps: float,
                         panel_state: str = "idle"):
         h, w = frame.shape[:2]
-        label = "FOCUS MODE  ON" if hand.peace else "FOCUS MODE  OFF"
-        accent = (180, 255, 120) if hand.peace else (180, 180, 180)
+        label = "FOCUS MODE  ON" if hand.two_hand_peace else "FOCUS MODE  OFF"
+        accent = (180, 255, 120) if hand.two_hand_peace else (180, 180, 180)
         (tw, th), _ = cv2.getTextSize(label, FONT, 0.62, 1)
         x1, y1 = 16, 16
         x2, y2 = x1 + tw + 64, y1 + th + 24
