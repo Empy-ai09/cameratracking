@@ -6,6 +6,65 @@ Proyek ini memakai Python, OpenCV, dan MediaPipe untuk membuat portal filter rea
 
 ---
 
+
+
+## 🇬🇧 English
+
+### Short description
+
+This version was adapted to make the documentation and usage flow more comfortable on Linux desktop environments. The main features from the original project are preserved: portal filters, gesture-based filter switching, 2D/3D mode, and screenshots.
+
+### System requirements
+
+- OS: Arch Linux or an Arch-based distribution
+- Desktop environment: KDE Plasma, GNOME, XFCE, Cinnamon, or others
+- Python: 3.8–3.11
+- Webcam: required
+- Python packages: `opencv-python`, `mediapipe`, `numpy`
+
+### Installation
+
+1. Create and activate a virtual environment (recommended to prevent `externally-managed-environment` errors):
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
+   ```
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### Run
+
+```bash
+python3 Retrolens.py
+```
+
+If `python3` is not available, use:
+
+```bash
+python Retrolens.py
+```
+
+### Controls
+
+- Spread both hands → open the portal
+- Pinch thumb + pinky → switch filter
+- Fist both hands / press `C` → toggle 2D/3D mode
+- `N` / `P` → next / previous filter
+- `S` → save screenshot
+- `Q` → quit
+
+### License
+
+This project uses the MIT License. See `LICENSE`.
+
+### Credits
+
+Based on the original project by Sy4hdan / syahdanfx.
+-----
+<br>
+
 ## 🇮🇩 Bahasa Indonesia
 
 ### Deskripsi singkat
@@ -62,58 +121,3 @@ Proyek ini menggunakan lisensi MIT. Lihat file `LICENSE`.
 Berdasarkan proyek asli oleh Sy4hdan / syahdanfx.
 
 ---
-
-## 🇬🇧 English
-
-### Short description
-
-This version was adapted to make the documentation and usage flow more comfortable on Linux desktop environments. The main features from the original project are preserved: portal filters, gesture-based filter switching, 2D/3D mode, and screenshots.
-
-### System requirements
-
-- OS: Arch Linux or an Arch-based distribution
-- Desktop environment: KDE Plasma, GNOME, XFCE, Cinnamon, or others
-- Python: 3.8–3.11
-- Webcam: required
-- Python packages: `opencv-python`, `mediapipe`, `numpy`
-
-### Installation
-
-1. Create and activate a virtual environment (recommended to prevent `externally-managed-environment` errors):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate
-   ```
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-### Run
-
-```bash
-python3 Retrolens.py
-```
-
-If `python3` is not available, use:
-
-```bash
-python Retrolens.py
-```
-
-### Controls
-
-- Spread both hands → open the portal
-- Pinch thumb + pinky → switch filter
-- Fist both hands / press `C` → toggle 2D/3D mode
-- `N` / `P` → next / previous filter
-- `S` → save screenshot
-- `Q` → quit
-
-### License
-
-This project uses the MIT License. See `LICENSE`.
-
-### Credits
-
-Based on the original project by Sy4hdan / syahdanfx.
