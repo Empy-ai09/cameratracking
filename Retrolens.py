@@ -9,6 +9,8 @@ from typing import Dict, List, Tuple, Callable
 
 import cv2
 import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 import numpy as np
 
 
@@ -165,15 +167,15 @@ class PortalProcessor:
         self.last_switch_time = 0.0
         self.last_mode_toggle = 0.0
 
-        self.mp_hands = mp.solutions.hands
-        self.mp_draw = mp.solutions.drawing_utils
-        self.detector = self.mp_hands.Hands(
-            static_image_mode=False,
-            max_num_hands=2,
-            model_complexity=1,
-            min_detection_confidence=0.8,
-            min_tracking_confidence=0.8,
+        base_options = python.BaseOptions(model_asset_path='hand_landmarker.task')
+        options = vision.HandLandmarkerOptions(
+            base_options=base_options,
+            num_hands=2,
+            min_hand_detection_confidence=0.8,
+            min_hand_presence_confidence=0.5,
+            min_tracking_confidence=0.8
         )
+        self.detector = vision.HandLandmarker.create_from_options(options)
 
     @property
     def current_filter_name(self) -> str:
@@ -214,19 +216,23 @@ class PortalProcessor:
         frame = cv2.resize(frame, (self.cfg.frame_width, self.cfg.frame_height))
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
-        results = self.detector.process(rgb)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+        results = self.detector.detect(mp_image)
         now = time.time()
         
         all_hand_tips = []
         fist_count = 0
         is_bowtie = False
 
-        if results.multi_hand_landmarks:
-            for hand_lm in results.multi_hand_landmarks:
-                self.mp_draw.draw_landmarks(frame, hand_lm, self.mp_hands.HAND_CONNECTIONS)
+        if results.hand_landmarks:
+            for hand_landmarks in results.hand_landmarks:
+                # Manual drawing of landmarks since solutions.drawing_utils is missing
+                for landmark in hand_landmarks:
+                    px = int(landmark.x * self.cfg.frame_width)
+                    py = int(landmark.y * self.cfg.frame_height)
+                    cv2.circle(frame, (px, py), 2, (0, 255, 0), -1)
                 
-                lm = hand_lm.landmark
-                tips = [(int(lm[i].x * self.cfg.frame_width), int(lm[i].y * self.cfg.frame_height)) for i in [4, 8, 12, 16, 20]]
+                tips = [(int(hand_landmarks[i].x * self.cfg.frame_width), int(hand_landmarks[i].y * self.cfg.frame_height)) for i in [4, 8, 12, 16, 20]]
                 all_hand_tips.append(tips)
 
                 # Fast Pinch
@@ -235,7 +241,7 @@ class PortalProcessor:
                         self.cycle_filter(1)
                         self.last_switch_time = now
 
-                if GeometryUtils.is_fist_closed(lm, self.cfg.frame_width, self.cfg.frame_height, self.cfg.fist_dist_threshold_px):
+                if GeometryUtils.is_fist_closed(hand_landmarks, self.cfg.frame_width, self.cfg.frame_height, self.cfg.fist_dist_threshold_px):
                     fist_count += 1
 
             # Dual Fist Mode Switch
