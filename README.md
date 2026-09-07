@@ -22,14 +22,15 @@ Versi ini dibuat dengan menyesuaikan dokumentasi dan alur penggunaan agar lebih 
 
 ### Instalasi
 
-1. Pastikan Python dan `pip` sudah terpasang.
+1. Buat dan aktifkan virtual environment (sangat disarankan, terutama pada Linux yang menggunakan PEP 668 seperti Arch Linux):
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
+   ```
 2. Install dependensi:
-
-```bash
-pip install -r requirements.txt
-```
-
-Jika kamu memakai virtual environment, aktifkan environment tersebut sebelum install.
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 ### Cara menjalankan
 
@@ -78,14 +79,15 @@ This version was adapted to make the documentation and usage flow more comfortab
 
 ### Installation
 
-1. Make sure Python and `pip` are installed.
+1. Create and activate a virtual environment (recommended to prevent `externally-managed-environment` errors):
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
+   ```
 2. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-If you use a virtual environment, activate it before installing.
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 ### Run
 
